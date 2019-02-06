@@ -10,6 +10,7 @@ from peyotl.nexson_syntax import (
     extract_otu_nexson,
     PhyloSchema,
 )
+import dendropy
 
 
 study_id = "pg_873"
@@ -18,12 +19,20 @@ configfi = "full_run.config"
 
 conf = physcraper.ConfigObj(configfi)
 
-dataset = physcraper.get_dataset_from_treebase(study_id,
-                                phylesystem_loc='api')
+#dataset = physcraper.get_dataset_from_treebase(study_id,
+#                                phylesystem_loc='api')
 
-aln = dataset.char_matrices[0]
+#aln = dataset.char_matrices[0]
 
-aln.write(path="before.aln", schema="nexus")
+#if len(aln) == 42:
+#  pass
+#else:
+#  aln = dataset.char_matrices[1]
+
+
+#aln.write(path="before.aln", schema="nexus")
+
+aln = dendropy.DnaCharacterMatrix.get(file=open("before.aln"), schema="nexus")
 
 nexson = physcraper.get_nexson(study_id, 'api')
 newick = extract_tree(nexson,
