@@ -13,26 +13,13 @@ from peyotl.nexson_syntax import (
 import dendropy
 
 
-study_id = "pg_873"
-tree_id = "tree1679"
+study_id = "pg_55"
+tree_id = "tree5864"
 configfi = "full_run.config"
+workdir = "otheraln"
 
 conf = physcraper.ConfigObj(configfi)
 
-#dataset = physcraper.get_dataset_from_treebase(study_id,
-#                                phylesystem_loc='api')
-
-#aln = dataset.char_matrices[0]
-
-#if len(aln) == 42:
-#  pass
-#else:
-#  aln = dataset.char_matrices[1]
-
-
-#aln.write(path="before.aln", schema="nexus")
-
-aln = dendropy.DnaCharacterMatrix.get(file=open("before.aln"), schema="nexus")
 
 nexson = physcraper.opentree_helpers.get_nexson(study_id, 'api')
 newick = extract_tree(nexson,
@@ -43,27 +30,45 @@ newick = extract_tree(nexson,
                                       tip_label="ot:originalLabel"))
 tre = dendropy.Tree.get(data=newick,
                    schema="newick",
-                   preserve_underscores=True,
-                   taxon_namespace=aln.taxon_namespace)
+                   preserve_underscores=True)
+
+
+
+dataset = physcraper.opentree_helpers.get_dataset_from_treebase(study_id,
+                                phylesystem_loc='api')
+
+aln = dataset.char_matrices[0]
+
+#order of data matrices is arbitratry!!!
+if len(aln) == len(tre.taxon_namespace):
+  pass
+else:
+  aln = dataset.char_matrices[1]
+
 
 aln.write(path="{}{}.aln".format(study_id, tree_id), schema="nexus")
 
+aln = dendropy.DnaCharacterMatrix.get(file=open("before2.aln"), schema="nexus", taxon_namespace=tre.taxon_namespace)
+
+
+tre.write(path="before2.tre", schema="nexus")
+
 data_obj = physcraper.generate_ATT_from_phylesystem(aln=aln,
-                                         workdir='treebase',
+                                         workdir=workdir,
                                          config_obj=conf,
                                          study_id=study_id,
                                          tree_id=tree_id)
 
 data_obj.write_files()
-json.dump(data_obj.otu_dict, open('treebase/otu_dict.json', 'wb'))
+json.dump(data_obj.otu_dict, open('{}/otu_dict.json'.format(workdir), 'wb'))
 
 sys.stdout.write("{} taxa in alignement and tree\n".format(len(data_obj.aln)))
 
 ids = physcraper.IdDicts(conf, workdir='treebase')
 
 scraper = physcraper.PhyscraperScrape(data_obj, ids)
+#scraper.read_blast_wrapper()
 scraper.est_full_tree()
-scaper.data.write_labelled('^ot:ottTaxonName')
 
 '''scraper.run_blast_wrapper()
 scraper.read_blast_wrapper()
