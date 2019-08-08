@@ -20,36 +20,39 @@ tree_id = "tree1679"
 workdir ="local_shoch"
 
 
-conf = physcraper.ConfigObj(configfi)
 
-dataset = physcraper.get_dataset_from_treebase(study_id,
+nexson = physcraper.opentree_helpers.get_nexson(study_id, 'api')
+newick = extract_tree(nexson,
+                      tree_id,
+                      PhyloSchema('newick',
+                                   output_nexml2json='1.2.1',
+                                   content="tree",
+                                   tip_label="ot:originalLabel"))
+
+tre = dendropy.Tree.get(data=newick,
+                   schema="newick",
+                   preserve_underscores=True)
+
+
+
+dataset = physcraper.opentree_helpers.get_dataset_from_treebase(study_id,
                                 phylesystem_loc='api')
 
 aln = dataset.char_matrices[0]
 
-if len(aln) == 42:
+##order of data matrices is arbitratry!!!
+if len(aln) == len(tre.taxon_namespace):
   pass
 else:
   aln = dataset.char_matrices[1]
 
 
-aln.write(path="before.aln", schema="nexus")
-
-aln = dendropy.DnaCharacterMatrix.get(file=open("before.aln"), schema="nexus")
-
-nexson = physcraper.opentree_helpers.get_nexson(study_id, 'api')
-newick = extract_tree(nexson,
-                          tree_id,
-                          PhyloSchema('newick',
-                                      output_nexml2json='1.2.1',
-                                      content="tree",
-                                      tip_label="ot:originalLabel"))
-tre = dendropy.Tree.get(data=newick,
-                   schema="newick",
-                   preserve_underscores=True,
-                   taxon_namespace=aln.taxon_namespace)
-
 aln.write(path="{}{}.aln".format(study_id, tree_id), schema="nexus")
+
+aln = dendropy.DnaCharacterMatrix.get(file=open("{}{}.aln".format(study_id, tree_id)), schema="nexus", taxon_namespace=tre.taxon_namespace)
+
+
+tre.write(path="{}{}.tre".format(study_id, tree_id), schema="nexus")
 
 data_obj = physcraper.generate_ATT_from_phylesystem(aln=aln,
                                          workdir=workdir,
@@ -58,36 +61,14 @@ data_obj = physcraper.generate_ATT_from_phylesystem(aln=aln,
                                          tree_id=tree_id)
 
 data_obj.write_files()
-json.dump(data_obj.otu_dict, open('treebase/otu_dict.json', 'wb'))
+json.dump(data_obj.otu_dict, open('{}/otu_dict.json'.format(workdir), 'wb'))
 
 sys.stdout.write("{} taxa in alignement and tree\n".format(len(data_obj.aln)))
 
 ids = physcraper.IdDicts(conf, workdir=workdir)
 
 scraper = physcraper.PhyscraperScrape(data_obj, ids)
+scraper.threshold=25
+scraper.mrca_ncbi =40996
+#scraper.read_blast_wrapper()
 scraper.est_full_tree()
-scraper.data.write_labelled('^ot:ottTaxonName')
-scraper.data.write_labelled('^ot:ottId', filename = "ids.tre")
-'''scraper.run_blast_wrapper()
-scraper.read_blast_wrapper()
-scraper.remove_identical_seqs()
-scraper.write_all_unaligned(filename="combo.fas")
-
-json.dump(data_obj.otu_dict, open('treebase/otu_dict2.json', 'wb'))
-
-
-scraper.generate_streamed_alignment()
-
-sys.stdout.write("round 1 complete\n")
-sys.stdout.write("{} taxa in alignment and tree\n".format(len(data_obj.aln)))
-#
-'''
-'''
-sys.stdout.write("round2\n")
-
-scraper.run_blast_wrapper()
-scraper.read_blast_wrapper()
-scraper.remove_identical_seqs()
-scraper.remove_identical_seqs()
-#scraper.generate_streamed_alignment()
-'''
