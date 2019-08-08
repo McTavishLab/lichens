@@ -12,25 +12,28 @@ from peyotl.nexson_syntax import (
 )
 import dendropy
 
+configfi = "aws.config"
+
 
 study_id = "pg_873"
 tree_id = "tree1679"
-configfi = "full_run.config"
+workdir ="local_shoch"
+
 
 conf = physcraper.ConfigObj(configfi)
 
-#dataset = physcraper.get_dataset_from_treebase(study_id,
-#                                phylesystem_loc='api')
+dataset = physcraper.get_dataset_from_treebase(study_id,
+                                phylesystem_loc='api')
 
-#aln = dataset.char_matrices[0]
+aln = dataset.char_matrices[0]
 
-#if len(aln) == 42:
-#  pass
-#else:
-#  aln = dataset.char_matrices[1]
+if len(aln) == 42:
+  pass
+else:
+  aln = dataset.char_matrices[1]
 
 
-#aln.write(path="before.aln", schema="nexus")
+aln.write(path="before.aln", schema="nexus")
 
 aln = dendropy.DnaCharacterMatrix.get(file=open("before.aln"), schema="nexus")
 
@@ -49,7 +52,7 @@ tre = dendropy.Tree.get(data=newick,
 aln.write(path="{}{}.aln".format(study_id, tree_id), schema="nexus")
 
 data_obj = physcraper.generate_ATT_from_phylesystem(aln=aln,
-                                         workdir='treebase',
+                                         workdir=workdir,
                                          config_obj=conf,
                                          study_id=study_id,
                                          tree_id=tree_id)
@@ -59,12 +62,12 @@ json.dump(data_obj.otu_dict, open('treebase/otu_dict.json', 'wb'))
 
 sys.stdout.write("{} taxa in alignement and tree\n".format(len(data_obj.aln)))
 
-ids = physcraper.IdDicts(conf, workdir='treebase')
+ids = physcraper.IdDicts(conf, workdir=workdir)
 
 scraper = physcraper.PhyscraperScrape(data_obj, ids)
 scraper.est_full_tree()
-scaper.data.write_labelled('^ot:ottTaxonName')
-
+scraper.data.write_labelled('^ot:ottTaxonName')
+scraper.data.write_labelled('^ot:ottId', filename = "ids.tre")
 '''scraper.run_blast_wrapper()
 scraper.read_blast_wrapper()
 scraper.remove_identical_seqs()
