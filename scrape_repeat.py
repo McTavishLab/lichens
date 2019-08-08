@@ -20,6 +20,7 @@ tree_id = "tree1679"
 workdir ="local_shoch"
 
 
+conf = physcraper.ConfigObj(configfi)
 
 nexson = physcraper.opentree_helpers.get_nexson(study_id, 'api')
 newick = extract_tree(nexson,
